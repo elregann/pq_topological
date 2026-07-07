@@ -74,16 +74,59 @@ Security Properties (verif_10 - verif_12):
 - Group action (transitivity, orbit structure)
 - Security analysis (search space, attack complexity)
 
+## KEM Implementation
+
+The file `epmp_kem.sage` contains a proof-of-concept Key Encapsulation Mechanism built on top of EPMP. This demonstrates that a KEM can be constructed over the EPMP hard problem, although this implementation is not yet production-ready.
+
+Protocol Overview:
+
+KeyGen (Alice):
+- Generate LPS permutations rho from primes p, q
+- rho serves as private key
+- Public parameters (p, q, k, d) are shared with Bob
+
+Encapsulate (Bob):
+- Generate random path P in LPS graph from vertex 0
+- Compute intermediate vertices along the path
+- Build constraints from path: rho(g_i)(v_{i-1}) = v_i
+- Identify trivial constraints (where generator fixes the from-vertex)
+- Send only non-trivial constraints + hint + endpoint to Alice
+- Hint = SHA-256(path || rho_signature)
+- Shared secret = SHA-256(path)
+
+Decapsulate (Alice):
+- Recover all possible paths consistent with non-trivial constraints using rho
+- Verify hint for each candidate path
+- Unique matching path gives shared secret
+- Shared secret = SHA-256(path)
+
+Security Mechanism:
+- Eve sees only non-trivial constraints, hint, and endpoint
+- Trivial constraints (from generators fixing sheet 0) hide information from Eve
+- Hint resolves path ambiguity using SHA-256 collision resistance
+- Without rho, Eve must solve EPMP to recover the path
+
+Important Notice:
+This is a proof-of-concept implementation. While it demonstrates that KEM construction over EPMP is feasible, it has not undergone formal security analysis. The current parameters (p=5, q=13, path_length=8) are suitable for demonstration but not for production use. Formal security reduction, side-channel resistance, and parameter optimization are subjects of ongoing research.
+
 ## How to Run
 
-All verifications require SageMath. Run each script:
+All scripts require SageMath.
+
+Run verification scripts:
 
     sage verif_01_parameters.sage
     sage verif_02_quaternion_solutions.sage
     ...
     sage verif_12_security_analysis.sage
 
-Each script outputs detailed validation results and ends with RESULT: True if all checks pass.
+Each verification script outputs detailed validation results and ends with RESULT: True if all checks pass.
+
+Run KEM demonstration:
+
+    sage epmp_kem.sage
+
+The KEM script demonstrates the complete key exchange between Alice and Bob, ending with RESULT: True if both parties derive the same shared secret.
 
 Configuration:
 Parameters p and q are defined at the top of each script. Current defaults: p = 5, q = 13.
@@ -105,19 +148,23 @@ Attack Resistance:
 - Local search: Prevented by expander properties
 - Algebraic attacks: No known polynomial-time algorithms for quaternion-based constructions
 
+Note: The KEM implementation introduces additional attack surfaces (path brute force, hint collision) that require separate analysis. The security numbers above apply to the underlying EPMP hard problem, not directly to the KEM construction.
+
 ## Implementation Status
 
 Complete and Verified:
 - LPS Ramanujan graph construction
 - EPMP instance generation
 - All mathematical properties validated
-- Security analysis performed
+- Security analysis of underlying hard problem
+- Proof-of-concept KEM implementation
 
-Future Work:
-- Parameter scaling for higher security levels
+Ongoing Research:
+- Formal security reduction for KEM construction
+- Parameter optimization for production use
 - Empirical hardness testing with SAT solvers
-- Full cryptographic scheme implementation
 - Comparison with NIST PQC standards
+- Side-channel resistance analysis
 
 ## References
 
