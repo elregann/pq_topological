@@ -1,4 +1,4 @@
-# pq_topological
+# PQ Topological
 
 Post-Quantum Cryptography based on Topological Covering Spaces and LPS Ramanujan Graphs.
 
